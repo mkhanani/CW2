@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>After School Classes</title>
+    <!-- Load Vue.js from a CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.7.14/dist/vue.js"></script>
+    <script defer src="https://use.fontawesome.com/releases/v5.15.4/js/all.js" integrity="sha384-rOA1PnstxnOBLzCLMcre8ybwbTmemjzdNlILg8O7z1lUkLXozs4DHonlDtnE7fpc" crossorigin="anonymous"></script>
+    <script src="products.js"></script>
+    <script src="Sorting.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://kit.fontawesome.com/59139d145c.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <!-- The element where Vue will mount -->
+    <div id="app">
+        <header>
+            <h1 v-text="sitename"></h1>
+            <button @click='showCheckout'>
+                <!-- Display the number of items in the cart -->
+                {{ cartItemCount }}
+                <!-- Add the cart icon -->
+                <span class="fas fa-cart-plus"></span> Checkout
+            </button>
+        </header>
+        <main>
+            <div class="sortBox">
+                <!-- Move sorting buttons to the top -->
+                <button @click="updateSorting('subject')">Sort by Subject</button>
+                <button @click="updateSorting('price')">Sort by Price</button>
+                <button @click="updateSorting('location')">Sort by Location</button>
+                <button @click="updateSorting('spaces')">Sort by Spaces</button>
+                <button @click="toggleSortOrder">{{ order.sortOrder === 'asc' ? 'Descending' : 'Ascending' }}</button>
+            </div>
+            <div v-if='showProduct'>
+                <div v-for="product in sortedProducts" class="product-container">
+                    <!-- Product information -->
+                    <figure>
+                        <!-- Bind 'src' attribute to 'product.image' in 'data' -->
+                        <img :src="product.image">
+                    </figure>
+                    <h2>{{ product.title }}</h2>
+                    <p v-html="product.description"></p>
+                    <!-- Use double curly brackets instead of 'v-text' -->
+                    <p>Price: {{ product.price }}</p>
+                    <p>Spaces: {{ product.spaces }}</p>
+                    <p>Location: {{ product.location }}</p>
+                    <!-- Display 'Add to Cart' button based on availability -->
+                    <button @click="addToCart(product)" :disabled="!canAddToCart(product)">Add To Cart</button>
+                    <span v-if="product.spaces === cartCount(product.id)">All Out!</span>
+                    <span v-else-if="product.spaces - cartCount(product.id) < 10">Only {{ product.spaces - cartCount(product.id) }} left!</span>
+                    <span v-else>Buy Now!</span>
+                    <!-- Display product ratings -->
+                    <div>
+                        <span v-for='n in product.rating'>★</span>
+                        <span v-for='n in 5 - product.rating'>☆</span>
+                    </div>
+                </div>
+            </div>
+            <div v-else>
+                <div class="checkout-form">
+                    <h2>Checkout</h2>
+                    <form @submit.prevent="submitForm" class="checkout-form">
+                        <div class="form-group">
+                            <label for="firstName" class="form-label">First Name</label>
+                            <input type="text" id="firstName" v-model.trim="order.firstName" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="lastName" class="form-label">Last Name</label>
+                            <input type="text" id="lastName" v-model.trim="order.lastName" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="address" class="form-label">Address</label>
+                            <input type="text" id="address" v-model="order.address" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="city" class="form-label">City</label>
+                            <input type="text" id="city" v-model="order.city" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="state" class="form-label">State</label>
+                            <select id="state" v-model="order.state" class="form-input" required>
+                                <option disabled value="">State</option>
+                                <option v-for="(state, key) in states" :value="state">{{ key }}</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="zip" class="form-label">Zip/Postal Code</label>
+                            <input type="number" id="zip" v-model.number="order.zip" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="gift" class="form-label">Ship as Gift?</label>
+                            <select id="gift" v-model="order.sendGift" class="form-input" required>
+                                <option value="Yes">Yes</option>
+                                <option value="No">No</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="method" class="form-label">Delivery Location</label>
+                            <select id="method" v-model="order.method" class="form-input" required>
+                                <option value="Home">Home</option>
+                                <option value="Business">Business</option>
+                            </select>
+                        </div>
+
+                        <div class="order-information">
+                            <h2>Order Information</h2>
+                            <div class="form-group">
+                                <label for="firstName">First Name:</label>
+                                <p>{{ order.firstName }}</p>
+                            </div>
+                            <div class="form-group">
+                                <label for="lastName">Last Name:</label>
+                                <p>{{ order.lastName }}</p>
+                            </div>
+                            <div class="form-group">
+                                <label for="address">Address:</label>
+                                <p>{{ order.address }}</p>
+                            </div>
+                            <div class="form-group">
+                                <label for="city">City:</label>
+                                <p>{{ order.city }}</p>
+                            </div>
+                            <div class="form-group">
+                                <label for="state">State:</label>
+                                <p>{{ order.state }}</p>
+                            </div>
+                            <div class="form-group">
+                                <label for="zip">Zip/Postal Code:</label>
+                                <p>{{ order.zip }}</p>
+                            </div>
+                            <div class="form-group">
+                                <label for="gift">Ship as Gift?</label>
+                                <p>{{ order.sendGift === 'Yes' ? 'Yes' : 'No' }}</p>
+                            </div>
+                            <div class="form-group">
+                                <label for="method">Delivery Location:</label>
+                                <p>{{ order.method }}</p>
+                            </div>
+                <!-- Display products in the cart -->
+                <div class="cart-items">
+                    <h2>Cart Items</h2>
+                    <div v-if="cart.length === 0">
+                        <p>Your cart is empty.</p>
+                    </div>
+                    <div v-else>
+                        <div v-for="productId in cart" :key="productId" class="cart-item">
+                            <h3>{{ getProductById(productId).title }}</h3>
+                            <figure>
+                                <img :src="getProductById(productId).image">
+                            </figure>
+                            <p v-html="getProductById(productId).description"></p>
+                            <p>Price: {{ getProductById(productId).price }}</p>
+                            <p>Location: {{ getProductById(productId).location }}</p>
+                            <button @click="removeFromCart(productId)">Remove</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Button to place the order -->
+                <button type="submit" class="btn-submit">Place Order</button>
+            </div>
+        </form>            
+        </main>
+    </div>
+
+    <script type="text/javascript">
+        let webstore = new Vue({
+            el: '#app',
+            data: {
+                sitename: 'After School Classes',
+                showProduct: true,
+                order: {
+                    firstName: '',
+                    lastName: '',
+                    address: '',
+                    city: '',
+                    zip: '',
+                    state: '',
+                    method: 'Home',
+                    gift: false,
+                    sendGift: 'Send as a gift',
+                    dontSendGift: 'Do not send as a gift',
+                    sortCriteria: 'name',
+                    sortOrder: 'asc'
+                },
+                states: {
+                    NH: 'Nahda',
+                    DG: 'Discovery Gardens',
+                    MR: 'Mirdiff',
+                    KV: 'Knowledge Village',
+                    GD: 'Garhoud',
+                    DA: 'Deira'
+                },
+                products: products,
+                cart: []
+            },
+                methods: {
+                    addToCart(product) {
+                        if (this.canAddToCart(product)) {
+                            product.spaces--;
+
+                        if (!this.cart.includes(product.id)){
+                            this.cart.push(product.id);
+                        }
+                        
+                        }
+                    },
+
+                    showCheckout() {
+                        this.showProduct = this.showProduct ? false : true;
+                    },
+
+                    submitForm() {
+                        if (this.cart.length === 0) {
+                            alert('Order cannot be placed as there are no items in the cart');
+                        } else {
+                            alert('Order placed successfully');
+                        }
+                    },
+
+                    canAddToCart(product) {
+                        return product.spaces > this.cartCount(product.id);
+                    },
+
+                    cartCount(id) {
+                        let count = 0;
+                        for (let i=0;i<this.cart.length;i++) {
+                            if (this.cart[i] === id) {
+                                count++;
+                            }
+                        }
+                        return count;
+                    },
+
+                    getProductById(productId) {
+                        // Find the product with the given productId in the products array
+                        return this.products.find(product => product.id === productId);
+                    },
+
+                    removeFromCart(productId) {
+                        const index = this.cart.indexOf(productId);
+                        if (index !== -1) {
+                            this.cart.splice(index, 1);
+                        }
+                    },
+
+                    updateSorting(criteria) {
+                        switch (criteria) {
+                            case 'name':
+                                this.order.sortOrder = this.order.sortOrder === 'asc' ? 'desc' : 'asc';
+                                this.order.sortCriteria = 'title';
+                            break;
+                            case 'subject':
+                                this.order.sortOrder = this.order.sortOrder === 'asc' ? 'desc' : 'asc';
+                                this.order.sortCriteria = 'price';
+                            break;
+                            case 'price':
+                                this.order.sortOrder = this.order.sortOrder === 'asc' ? 'desc' : 'asc';
+                                this.order.sortCriteria = 'price';
+                            break;
+                            case 'location':
+                                this.order.sortOrder = this.order.sortOrder === 'asc' ? 'desc' : 'asc';
+                                this.order.sortCriteria = 'location';
+                            break;
+                            case 'spaces':
+                                this.order.sortOrder = this.order.sortOrder === 'asc' ? 'desc' : 'asc';
+                                this.order.sortCriteria = 'spaces';
+                            break;
+                        default:
+                            // Handle default case or do nothing
+                        break;
+                    }
+                },
+
+                toggleSortOrder() {
+                    // Toggle between 'asc' and 'desc' when the button is clicked
+                    this.order.sortOrder = this.order.sortOrder === 'asc' ? 'desc' : 'asc';
+                },
+
+            },
+
+                computed: { // the Computed Property object
+                    cartItemCount: function() {
+                    return this.cart.length || '';
+                },
+                
+                sortedProducts() {
+                    let productsArray = this.products.slice(0);
+                    const order = this.order;
+
+                    // Define a dynamic comparison function based on sortCriteria
+                    function compare(a, b) {
+                        let comparison = 0;
+
+                        if (a[order.sortCriteria] > b[order.sortCriteria]) {
+                            comparison = 1;
+                        } else if (a[order.sortCriteria] < b[order.sortCriteria]) {
+                            comparison = -1;
+                        }
+
+                        return order.sortOrder === 'asc' ? comparison : -comparison;
+                    }
+
+                    return productsArray.sort(compare);
+
+                },
+            },
+
+            },);
+        </script>
+</html>
