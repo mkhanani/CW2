@@ -202,7 +202,7 @@
                 },
                 // New method: fetch all lessons
                 fetchLessons() {
-                    fetch('/collection/lessons')
+                    fetch('http://localhost:3000/collection/lessons')
                     .then(response => response.json())
                     .then(data => {
                         console.log('Lessons:', data);
@@ -212,7 +212,7 @@
                 },
                 // New method: save a new order
                 saveOrder(orderData) {
-                    fetch('/collection/orders', {
+                    fetch('http://localhost:3000/collection/orders', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
