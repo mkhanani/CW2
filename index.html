@@ -5,8 +5,6 @@
     <!-- Load Vue.js from a CDN -->
     <script src="https://cdn.jsdelivr.net/npm/vue@2.7.14/dist/vue.js"></script>
     <script defer src="https://use.fontawesome.com/releases/v5.15.4/js/all.js" integrity="sha384-rOA1PnstxnOBLzCLMcre8ybwbTmemjzdNlILg8O7z1lUkLXozs4DHonlDtnE7fpc" crossorigin="anonymous"></script>
-    <script src="products.js"></script>
-    <script src="Sorting.js"></script>
     <link rel="stylesheet" href="styles.css">
     <script src="https://kit.fontawesome.com/59139d145c.js" crossorigin="anonymous"></script>
 </head>
@@ -101,65 +99,11 @@
                                 <option value="Business">Business</option>
                             </select>
                         </div>
-
-                        <div class="order-information">
-                            <h2>Order Information</h2>
-                            <div class="form-group">
-                                <label for="firstName">First Name:</label>
-                                <p>{{ order.firstName }}</p>
-                            </div>
-                            <div class="form-group">
-                                <label for="lastName">Last Name:</label>
-                                <p>{{ order.lastName }}</p>
-                            </div>
-                            <div class="form-group">
-                                <label for="address">Address:</label>
-                                <p>{{ order.address }}</p>
-                            </div>
-                            <div class="form-group">
-                                <label for="city">City:</label>
-                                <p>{{ order.city }}</p>
-                            </div>
-                            <div class="form-group">
-                                <label for="state">State:</label>
-                                <p>{{ order.state }}</p>
-                            </div>
-                            <div class="form-group">
-                                <label for="zip">Zip/Postal Code:</label>
-                                <p>{{ order.zip }}</p>
-                            </div>
-                            <div class="form-group">
-                                <label for="gift">Ship as Gift?</label>
-                                <p>{{ order.sendGift === 'Yes' ? 'Yes' : 'No' }}</p>
-                            </div>
-                            <div class="form-group">
-                                <label for="method">Delivery Location:</label>
-                                <p>{{ order.method }}</p>
-                            </div>
-                <!-- Display products in the cart -->
-                <div class="cart-items">
-                    <h2>Cart Items</h2>
-                    <div v-if="cart.length === 0">
-                        <p>Your cart is empty.</p>
-                    </div>
-                    <div v-else>
-                        <div v-for="productId in cart" :key="productId" class="cart-item">
-                            <h3>{{ getProductById(productId).title }}</h3>
-                            <figure>
-                                <img :src="getProductById(productId).image">
-                            </figure>
-                            <p v-html="getProductById(productId).description"></p>
-                            <p>Price: {{ getProductById(productId).price }}</p>
-                            <p>Location: {{ getProductById(productId).location }}</p>
-                            <button @click="removeFromCart(productId)">Remove</button>
-                        </div>
-                    </div>
+                        <!-- Button to place the order -->
+                        <button type="submit" class="btn-submit">Place Order</button>
+                    </form>
                 </div>
-
-                <!-- Button to place the order -->
-                <button type="submit" class="btn-submit">Place Order</button>
             </div>
-        </form>            
         </main>
     </div>
 
@@ -191,104 +135,106 @@
                     GD: 'Garhoud',
                     DA: 'Deira'
                 },
-                products: products,
+                products: [],
                 cart: []
             },
-                methods: {
-                    addToCart(product) {
-                        if (this.canAddToCart(product)) {
-                            product.spaces--;
-
+            created() {
+                this.fetchLessons();
+            },
+            methods: {
+                addToCart(product) {
+                    if (this.canAddToCart(product)) {
+                        product.spaces--;
                         if (!this.cart.includes(product.id)){
                             this.cart.push(product.id);
                         }
-                        
+                    }
+                },
+                showCheckout() {
+                    this.showProduct = !this.showProduct;
+                },
+                submitForm() {
+                    if (this.cart.length === 0) {
+                        alert('Order cannot be placed as there are no items in the cart');
+                    } else {
+                        this.saveOrder(this.order); // Call saveOrder method with order data
+                        alert('Order placed successfully');
+                    }
+                },
+                canAddToCart(product) {
+                    return product.spaces > this.cartCount(product.id);
+                },
+                cartCount(id) {
+                    let count = 0;
+                    for (let i=0;i<this.cart.length;i++) {
+                        if (this.cart[i] === id) {
+                            count++;
                         }
-                    },
-
-                    showCheckout() {
-                        this.showProduct = this.showProduct ? false : true;
-                    },
-
-                    submitForm() {
-                        if (this.cart.length === 0) {
-                            alert('Order cannot be placed as there are no items in the cart');
-                        } else {
-                            alert('Order placed successfully');
-                        }
-                    },
-
-                    canAddToCart(product) {
-                        return product.spaces > this.cartCount(product.id);
-                    },
-
-                    cartCount(id) {
-                        let count = 0;
-                        for (let i=0;i<this.cart.length;i++) {
-                            if (this.cart[i] === id) {
-                                count++;
-                            }
-                        }
-                        return count;
-                    },
-
-                    getProductById(productId) {
-                        // Find the product with the given productId in the products array
-                        return this.products.find(product => product.id === productId);
-                    },
-
-                    removeFromCart(productId) {
-                        const index = this.cart.indexOf(productId);
-                        if (index !== -1) {
-                            this.cart.splice(index, 1);
-                        }
-                    },
-
-                    updateSorting(criteria) {
-                        switch (criteria) {
-                            case 'name':
-                                this.order.sortOrder = this.order.sortOrder === 'asc' ? 'desc' : 'asc';
-                                this.order.sortCriteria = 'title';
-                            break;
-                            case 'subject':
-                                this.order.sortOrder = this.order.sortOrder === 'asc' ? 'desc' : 'asc';
-                                this.order.sortCriteria = 'price';
-                            break;
-                            case 'price':
-                                this.order.sortOrder = this.order.sortOrder === 'asc' ? 'desc' : 'asc';
-                                this.order.sortCriteria = 'price';
-                            break;
-                            case 'location':
-                                this.order.sortOrder = this.order.sortOrder === 'asc' ? 'desc' : 'asc';
-                                this.order.sortCriteria = 'location';
-                            break;
-                            case 'spaces':
-                                this.order.sortOrder = this.order.sortOrder === 'asc' ? 'desc' : 'asc';
-                                this.order.sortCriteria = 'spaces';
+                    }
+                    return count;
+                },
+                getProductById(productId) {
+                    return this.products.find(product => product.id === productId);
+                },
+                removeFromCart(productId) {
+                    const index = this.cart.indexOf(productId);
+                    if (index !== -1) {
+                        this.cart.splice(index, 1);
+                    }
+                },
+                updateSorting(criteria) {
+                    switch (criteria) {
+                        case 'name':
+                        case 'subject':
+                        case 'price':
+                        case 'location':
+                        case 'spaces':
+                            this.order.sortOrder = this.order.sortOrder === 'asc' ? 'desc' : 'asc';
+                            this.order.sortCriteria = criteria;
                             break;
                         default:
                             // Handle default case or do nothing
-                        break;
+                            break;
                     }
                 },
-
                 toggleSortOrder() {
-                    // Toggle between 'asc' and 'desc' when the button is clicked
                     this.order.sortOrder = this.order.sortOrder === 'asc' ? 'desc' : 'asc';
                 },
-
+                // New method: fetch all lessons
+                fetchLessons() {
+                    fetch('/collection/lessons')
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Lessons:', data);
+                        this.products = data; // Update products data with fetched lessons
+                    })
+                    .catch(error => console.error('Error fetching lessons:', error));
+                },
+                // New method: save a new order
+                saveOrder(orderData) {
+                    fetch('/collection/orders', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(orderData)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('New order saved:', data);
+                        // Handle the response data if needed
+                    })
+                    .catch(error => console.error('Error saving order:', error));
+                }
             },
-
-                computed: { // the Computed Property object
-                    cartItemCount: function() {
+            computed: {
+                cartItemCount: function() {
                     return this.cart.length || '';
                 },
-                
                 sortedProducts() {
                     let productsArray = this.products.slice(0);
                     const order = this.order;
 
-                    // Define a dynamic comparison function based on sortCriteria
                     function compare(a, b) {
                         let comparison = 0;
 
@@ -302,10 +248,8 @@
                     }
 
                     return productsArray.sort(compare);
-
                 },
             },
-
-            },);
-        </script>
+        });
+    </script>
 </html>
